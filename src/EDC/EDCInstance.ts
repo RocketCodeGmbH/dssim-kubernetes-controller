@@ -25,6 +25,7 @@ export class EDCInstance extends BaseInstance implements Instance {
   private configMapName: string;
   private keystoreFileName = 'keystore';
 
+  static HealthEndpoint = {name: 'health', path: '/api/check', port: 8080};
   static ControllerEndpoint = {name: 'controller', path: '/api', port: 8181};
   static IDSEndpoint = {name: 'ids', path: '/api/v1/ids', port: 8282};
   static DatamanagementEndpoint = {
@@ -40,6 +41,7 @@ export class EDCInstance extends BaseInstance implements Instance {
   };
   static ControlEndpoint = {name: 'control', path: '/control', port: 8585};
   static endpoints: Endpoint[] = [
+    EDCInstance.HealthEndpoint,
     EDCInstance.ControllerEndpoint,
     EDCInstance.IDSEndpoint,
     EDCInstance.DatamanagementEndpoint,
@@ -232,8 +234,6 @@ export class EDCInstance extends BaseInstance implements Instance {
 
     this.endPointUrl = `http://${this.deploymentName}`;
     this.hostname = this.deploymentName;
-    this.healthCheckUrl = `https://${this.deploymentName}${
-      this.endpoints.find(e => e.name === 'datamanagement')?.path
-    }/check/health`;
+    this.healthCheckUrl = `https://${this.deploymentName}/api/check/health`;
   }
 }

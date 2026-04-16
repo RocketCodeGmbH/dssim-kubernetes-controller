@@ -25,29 +25,26 @@ export class EDCInstance extends BaseInstance implements Instance {
   private configMapName: string;
   private keystoreFileName = 'keystore';
 
-  static HealthEndpoint = {name: 'health', path: '/api/check', port: 8080};
-  static ControllerEndpoint = {name: 'controller', path: '/api', port: 8181};
-  static IDSEndpoint = {name: 'ids', path: '/api/v1/ids', port: 8282};
+  // EDC 0.16.0 API contexts
+  static HealthEndpoint = {name: 'health', path: '/api', port: 8080};
   static DatamanagementEndpoint = {
     name: 'datamanagement',
-    path: '/api/v1/data',
+    path: '/api/management',
+    port: 8181,
+  };
+  static ProtocolEndpoint = {name: 'protocol', path: '/api/dsp', port: 8282};
+  static SignalingEndpoint = {
+    name: 'signaling',
+    path: '/api/signaling',
     port: 8383,
   };
-  static PublicEndpoint = {name: 'public', path: '/public', port: 8686};
-  static DataplaneEndpoint = {
-    name: 'dataplane',
-    path: '/dataplane',
-    port: 8484,
-  };
-  static ControlEndpoint = {name: 'control', path: '/control', port: 8585};
+  static ControlEndpoint = {name: 'control', path: '/api/control', port: 9191};
   static endpoints: Endpoint[] = [
     EDCInstance.HealthEndpoint,
-    EDCInstance.ControllerEndpoint,
-    EDCInstance.IDSEndpoint,
     EDCInstance.DatamanagementEndpoint,
-    EDCInstance.DataplaneEndpoint,
+    EDCInstance.ProtocolEndpoint,
+    EDCInstance.SignalingEndpoint,
     EDCInstance.ControlEndpoint,
-    EDCInstance.PublicEndpoint,
   ];
 
   private configFileName = 'config.properties';
@@ -234,6 +231,6 @@ export class EDCInstance extends BaseInstance implements Instance {
 
     this.endPointUrl = `http://${this.deploymentName}`;
     this.hostname = this.deploymentName;
-    this.healthCheckUrl = `https://${this.deploymentName}/api/check/health`;
+    this.healthCheckUrl = `https://${this.deploymentName}/api/check/health`; // /api → port 8080 via ingress
   }
 }

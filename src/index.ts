@@ -35,6 +35,7 @@ import {NetworkControl} from './system/NetworkControl.js';
 export {DSCInstance} from './IDS/DSCInstance.js';
 export {BrokerInstance} from './IDS/BrokerInstance.js';
 export {EDCInstance} from './EDC/EDCInstance.js';
+export {SplitEDCInstance} from './EDC/SplitEDCInstance.js';
 export {DapsInstance} from './IDS/DapsInstance.js';
 
 import {Monitoring} from './Monitoring/Monitoring.js';

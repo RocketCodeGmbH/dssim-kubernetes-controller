@@ -33,19 +33,19 @@ export class SplitEDCInstance extends BaseInstance {
 
   /** Endpoints hosted on the control plane pod. */
   static readonly CpEndpoints: Endpoint[] = [
-    {name: 'health', path: '/api/check', port: 8080},
-    {name: 'controller', path: '/api', port: 8181},
-    {name: 'ids', path: '/api/v1/ids', port: 8282},
-    {name: 'datamanagement', path: '/api/v1/data', port: 8383},
-    {name: 'control', path: '/control', port: 8585},
+    { name: 'health',      path: '/api',            port: 9080 },
+    { name: 'management',  path: '/api/management', port: 9081 },
+    { name: 'control',     path: '/api/control',    port: 9082 },
+    { name: 'protocol',    path: '/api/v1/dsp',     port: 9083 },
+    { name: 'version',     path: '/api/version',    port: 9085 },
+    { name: 'catalog',     path: '/api/catalog',    port: 9086 },
   ];
 
-  /** Endpoints hosted on the data plane pod. */
+    /** Endpoints hosted on the data plane pod. */
   static readonly DpEndpoints: Endpoint[] = [
-    {name: 'health', path: '/api/check', port: 8080},
-    {name: 'dataplane', path: '/dataplane', port: 8484},
-    {name: 'control', path: '/control', port: 8585},
-    {name: 'public', path: '/public', port: 8686},
+    { name: 'health',  path: '/api',           port: 7080 },
+    { name: 'control', path: '/api/control',   port: 7082 },
+    { name: 'public',  path: '/api/v2/public', port: 7084 },
   ];
 
   constructor(
@@ -204,7 +204,8 @@ export class SplitEDCInstance extends BaseInstance {
 
     this.endPointUrl = `http://${this.cpName}`;
     this.hostname = this.cpName;
-    this.healthCheckUrl = `https://${this.cpName}/api/check/health`;
+     // TODO: Ensure Vault is running and accessible before setting health check URL (currently, the health check will fail until Vault is up, which may cause ScenarioController to wait indefinitely).
+    this.healthCheckUrl = `http://${this.cpName}/api/check/health`;
   }
 
   private buildDeploymentSpec(
@@ -284,5 +285,6 @@ export class SplitEDCInstance extends BaseInstance {
         },
       },
     };
+    
   }
 }

@@ -67,9 +67,6 @@ export class SplitEDCInstance extends BaseInstance {
     cpImage: ContainerImage,
     dpImage: ContainerImage
   ) {
-    // Pass CpEndpoints as the canonical endpoint list (used by ScenarioController
-    // when wiring up SplitEDCController — must include ids, control, datamanagement).
-    // Pass both images so BaseInstance.deployPullSecrets() handles both.
     super(deploymentName, [cpImage, dpImage], SplitEDCInstance.CpEndpoints);
     this.cpName = `${deploymentName}-cp`;
     this.dpName = `${deploymentName}-dp`;
@@ -204,8 +201,7 @@ export class SplitEDCInstance extends BaseInstance {
 
     this.endPointUrl = `http://${this.cpName}`;
     this.hostname = this.cpName;
-     // TODO: Ensure Vault is running and accessible before setting health check URL (currently, the health check will fail until Vault is up, which may cause ScenarioController to wait indefinitely).
-    this.healthCheckUrl = `http://${this.cpName}/api/check/health`;
+    this.healthCheckUrl = `https://${this.cpName}/api/check/health`;
   }
 
   private buildDeploymentSpec(

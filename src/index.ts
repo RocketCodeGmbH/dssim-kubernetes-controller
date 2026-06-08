@@ -108,8 +108,8 @@ export class KubernetesController implements EnvironmentControllerInterface {
     const pullSecrets = await instance.deployPullSecrets();
     await instance.deploySecrets();
     await instance.deployConfigMaps();
-    await instance.deployApp(pullSecrets);
     await instance.deployServices();
+    await instance.deployApp(pullSecrets);
     await instance.deployIngress();
   }
 

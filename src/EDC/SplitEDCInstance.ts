@@ -33,19 +33,19 @@ export class SplitEDCInstance extends BaseInstance {
 
   /** Endpoints hosted on the control plane pod. */
   static readonly CpEndpoints: Endpoint[] = [
-    { name: 'health',      path: '/api',            port: 9080 },
-    { name: 'management',  path: '/api/management', port: 9081 },
-    { name: 'control',     path: '/api/control',    port: 9082 },
-    { name: 'protocol',    path: '/api/v1/dsp',     port: 9083 },
-    { name: 'version',     path: '/api/version',    port: 9085 },
-    { name: 'catalog',     path: '/api/catalog',    port: 9086 },
+    {name: 'health', path: '/api', port: 9080},
+    {name: 'management', path: '/api/management', port: 9081},
+    {name: 'control', path: '/api/control', port: 9082},
+    {name: 'protocol', path: '/api/v1/dsp', port: 9083},
+    {name: 'version', path: '/api/version', port: 9085},
+    {name: 'catalog', path: '/api/catalog', port: 9086},
   ];
 
-    /** Endpoints hosted on the data plane pod. */
+  /** Endpoints hosted on the data plane pod. */
   static readonly DpEndpoints: Endpoint[] = [
-    { name: 'health',  path: '/api',           port: 7080 },
-    { name: 'control', path: '/api/control',   port: 7082 },
-    { name: 'public',  path: '/api/v2/public', port: 7084 },
+    {name: 'health', path: '/api', port: 7080},
+    {name: 'control', path: '/api/control', port: 7082},
+    {name: 'public', path: '/api/v2/public', port: 7084},
   ];
 
   constructor(
@@ -211,22 +211,25 @@ export class SplitEDCInstance extends BaseInstance {
     endpoints: Endpoint[],
     pullSecrets: {[key: string]: string}
   ) {
+    const healthPort = endpoints.find(e => e.name === 'health')?.port;
+    if (healthPort === undefined) {
+      throw new Error(
+        `No 'health' endpoint defined for ${name}; cannot configure EDC health probes`
+      );
+    }
     return {
       selector: {matchLabels: {app: name}},
       replicas: 1,
       template: {
         metadata: {labels: {app: name}},
         spec: {
-          imagePullSecrets:
-            image.pullSecret
-              ? [
-                  {
-                    name: pullSecrets[
-                      Object.keys(image.pullSecret)[0]
-                    ],
-                  },
-                ]
-              : [],
+          imagePullSecrets: image.pullSecret
+            ? [
+                {
+                  name: pullSecrets[Object.keys(image.pullSecret)[0]],
+                },
+              ]
+            : [],
           volumes: [
             {emptyDir: {}, name: 'config-dir'},
             {configMap: {name: configMapName}, name: configMapName},
@@ -255,6 +258,20 @@ export class SplitEDCInstance extends BaseInstance {
                 containerPort: e.port,
                 name: e.name,
               })),
+
+              readinessProbe: {
+                httpGet: {path: '/api/check/readiness', port: healthPort},
+                initialDelaySeconds: 10,
+                periodSeconds: 5,
+                failureThreshold: 12,
+              },
+
+              livenessProbe: {
+                httpGet: {path: '/api/check/liveness', port: healthPort},
+                initialDelaySeconds: 90,
+                periodSeconds: 10,
+                failureThreshold: 3,
+              },
               env: [
                 {
                   name: 'EDC_FS_CONFIG',
@@ -273,14 +290,11 @@ export class SplitEDCInstance extends BaseInstance {
                   value: this.vaultPw,
                 },
               ],
-              volumeMounts: [
-                {name: 'config-dir', mountPath: '/config'},
-              ],
+              volumeMounts: [{name: 'config-dir', mountPath: '/config'}],
             },
           ],
         },
       },
     };
-    
   }
 }

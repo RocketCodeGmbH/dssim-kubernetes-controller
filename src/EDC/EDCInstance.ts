@@ -17,20 +17,28 @@
  *       Michel Otto - initial implementation
  *
  */
-import { Instance, ContainerImage, Endpoint } from 'dssim-core';
-import { BaseInstance } from '../BaseInstance.js';
-import { KubernetesExecutor } from '../KubernetesExecutor.js';
+import {Instance, ContainerImage, Endpoint} from 'dssim-core';
+import {BaseInstance} from '../BaseInstance.js';
+import {KubernetesExecutor} from '../KubernetesExecutor.js';
 
 export class EDCInstance extends BaseInstance implements Instance {
   private configMapName: string;
   private keystoreFileName = 'keystore';
 
-  static HealthEndpoint = { name: 'health', path: '/api/check', port: 8080 };
-  static ManagementEndpoint = { name: 'management', path: '/api/management', port: 8181 };
-  static ProtocolEndpoint = { name: 'protocol', path: '/api/dsp', port: 8282 };
-  static SignalingEndpoint = { name: 'signaling', path: '/api/signaling', port: 8383 };
-  static ControlEndpoint = { name: 'control', path: '/api/control', port: 9191 };
-  static PublicEndpoint = { name: 'public', path: '/public', port: 8686 };
+  static HealthEndpoint = {name: 'health', path: '/api/check', port: 8080};
+  static ManagementEndpoint = {
+    name: 'management',
+    path: '/api/management',
+    port: 8181,
+  };
+  static ProtocolEndpoint = {name: 'protocol', path: '/api/dsp', port: 8282};
+  static SignalingEndpoint = {
+    name: 'signaling',
+    path: '/api/signaling',
+    port: 8383,
+  };
+  static ControlEndpoint = {name: 'control', path: '/api/control', port: 9191};
+  static PublicEndpoint = {name: 'public', path: '/public', port: 8686};
 
   static endpoints: Endpoint[] = [
     EDCInstance.HealthEndpoint,
@@ -76,11 +84,11 @@ export class EDCInstance extends BaseInstance implements Instance {
         ),
         [this.vaultFileName]: this.vaultFile,
       },
-      { [this.keystoreFileName]: this.keystore }
+      {[this.keystoreFileName]: this.keystore}
     );
   }
 
-  public async deployApp(pullSecrets: { [key: string]: string }): Promise<void> {
+  public async deployApp(pullSecrets: {[key: string]: string}): Promise<void> {
     await KubernetesExecutor.getInstance().deployApp(
       this.deploymentName,
       {
@@ -99,15 +107,15 @@ export class EDCInstance extends BaseInstance implements Instance {
           spec: {
             imagePullSecrets: pullSecrets
               ? [
-                {
-                  name: pullSecrets[
-                    Object.keys(this.containerImages[0].pullSecret!)[0]
-                  ],
-                },
-              ]
+                  {
+                    name: pullSecrets[
+                      Object.keys(this.containerImages[0].pullSecret!)[0]
+                    ],
+                  },
+                ]
               : [],
             volumes: [
-              { emptyDir: {}, name: 'config-dir' },
+              {emptyDir: {}, name: 'config-dir'},
               {
                 configMap: {
                   name: this.configMapName,
@@ -142,7 +150,7 @@ export class EDCInstance extends BaseInstance implements Instance {
                 image: this.containerImages[0].image,
                 imagePullPolicy: 'Always',
                 ports: this.endpoints.map(e => {
-                  return { containerPort: e.port, name: e.name };
+                  return {containerPort: e.port, name: e.name};
                 }),
 
                 /*readinessProbe: {
@@ -177,7 +185,7 @@ export class EDCInstance extends BaseInstance implements Instance {
                   {
                     name: 'EDC_DSP_CALLBACK_ADDRESS',
                     value: 'http://' + this.deploymentName + ':8282/api/dsp',
-                  }
+                  },
                 ],
                 volumeMounts: [
                   {
@@ -208,7 +216,7 @@ export class EDCInstance extends BaseInstance implements Instance {
                   backend: {
                     service: {
                       name: this.deploymentName,
-                      port: { number: e.port },
+                      port: {number: e.port},
                     },
                   },
                   path: e.path,

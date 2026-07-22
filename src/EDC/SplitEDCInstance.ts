@@ -30,8 +30,6 @@ export class SplitEDCInstance extends BaseInstance {
   private readonly keystoreFileName = 'keystore';
   private readonly configFileName = 'config.properties';
   private readonly vaultFileName = 'dataspaceconnector-vault.properties';
-  private readonly nodeSelector: { [key: string]: string };
-  private readonly nodeAffinity: { [key: string]: string };
 
   /** Endpoints hosted on the control plane pod. */
   static readonly CpEndpoints: Endpoint[] = [
@@ -67,17 +65,13 @@ export class SplitEDCInstance extends BaseInstance {
     private readonly vaultFile: string,
     private readonly vaultPw: string,
     cpImage: ContainerImage,
-    dpImage: ContainerImage,
-    nodeSelector: { [key: string]: string },
-    nodeAffinity: { [key: string]: string }
+    dpImage: ContainerImage
   ) {
     super(deploymentName, [cpImage, dpImage], SplitEDCInstance.CpEndpoints);
     this.cpName = `${deploymentName}-cp`;
     this.dpName = `${deploymentName}-dp`;
     this.cpConfigMapName = `edc-pre-config-${this.cpName}`;
     this.dpConfigMapName = `edc-pre-config-${this.dpName}`;
-    this.nodeSelector = nodeSelector;
-    this.nodeAffinity = nodeAffinity;
   }
 
   public async deployConfigMaps(): Promise<void> {
@@ -106,7 +100,7 @@ export class SplitEDCInstance extends BaseInstance {
     );
   }
 
-  public async deployApp(pullSecrets: { [key: string]: string }): Promise<void> {
+  public async deployApp(pullSecrets: { [key: string]: string }, nodeSelector?: { [key: string]: string }, nodeAffinity?: { [key: string]: string }): Promise<void> {
     await KubernetesExecutor.getInstance().deployApp(
       this.cpName,
       this.buildDeploymentSpec(
@@ -115,8 +109,8 @@ export class SplitEDCInstance extends BaseInstance {
         this.cpConfigMapName,
         SplitEDCInstance.CpEndpoints,
         pullSecrets,
-        this.nodeSelector,
-        this.nodeAffinity
+        nodeSelector,
+        nodeAffinity
       ),
       this.memoryLimit,
       this.cpuLimit
@@ -129,8 +123,8 @@ export class SplitEDCInstance extends BaseInstance {
         this.dpConfigMapName,
         SplitEDCInstance.DpEndpoints,
         pullSecrets,
-        this.nodeSelector,
-        this.nodeAffinity
+        nodeSelector,
+        nodeAffinity
       ),
       this.memoryLimit,
       this.cpuLimit

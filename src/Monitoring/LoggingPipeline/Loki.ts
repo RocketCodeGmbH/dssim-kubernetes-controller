@@ -21,10 +21,10 @@ import {
   V1DeploymentSpec,
   V1LocalObjectReference,
 } from '@kubernetes/client-node';
-import {KubernetesExecutor} from '../../KubernetesExecutor.js';
+import { KubernetesExecutor } from '../../KubernetesExecutor.js';
 
 export class Loki {
-  constructor(public deploymentName: string, public readonly port: number) {}
+  constructor(public deploymentName: string, public readonly port: number, private nodeSelector?: { [key: string]: string }, private nodeAffinity?: { [key: string]: string }) { }
 
   deploy = async () => {
     await KubernetesExecutor.getInstance().deployConfigMap(
@@ -34,7 +34,7 @@ export class Loki {
 
     await KubernetesExecutor.getInstance().deployApp(
       this.deploymentName,
-      this.deploymentSpec(this.deploymentName, []),
+      this.deploymentSpec(this.deploymentName, [], this.nodeSelector, this.nodeAffinity),
       undefined,
       undefined
     );
@@ -43,8 +43,8 @@ export class Loki {
       this.deploymentName,
       this.deploymentName,
       [
-        {port: this.port, targetPort: this.port, name: 'lokiport'},
-        {port: this.GRPCPORT, targetPort: this.GRPCPORT, name: 'grpcport'},
+        { port: this.port, targetPort: this.port, name: 'lokiport' },
+        { port: this.GRPCPORT, targetPort: this.GRPCPORT, name: 'grpcport' },
       ]
     );
 
@@ -60,7 +60,7 @@ export class Loki {
                 backend: {
                   service: {
                     name: this.deploymentName,
-                    port: {number: this.port},
+                    port: { number: this.port },
                   },
                 },
                 path: '/',
@@ -77,7 +77,7 @@ export class Loki {
 
   GRPCPORT = 9096;
   CONFIGMAPNAME = 'lokiconfig';
-  configFile: {[key: string]: string} = {
+  configFile: { [key: string]: string } = {
     'local-config.yaml': `auth_enabled: false
   
   server:
@@ -119,7 +119,9 @@ export class Loki {
 
   deploymentSpec = (
     deploymentName: string,
-    pullSecrets: V1LocalObjectReference[]
+    pullSecrets: V1LocalObjectReference[],
+    nodeSelector?: { [key: string]: string },
+    nodeAffinity?: { [key: string]: string }
   ): V1DeploymentSpec => {
     return {
       selector: {
@@ -135,6 +137,8 @@ export class Loki {
           },
         },
         spec: {
+          nodeSelector: nodeSelector,
+          affinity: nodeAffinity ? { nodeAffinity: { requiredDuringSchedulingIgnoredDuringExecution: { nodeSelectorTerms: [{ matchExpressions: Object.entries(nodeAffinity).map(([key, value]) => ({ key, operator: 'In', values: [value] })) }] } } } : undefined,
           imagePullSecrets: pullSecrets,
           volumes: [
             {
@@ -148,7 +152,7 @@ export class Loki {
             {
               name: deploymentName,
               image: this.IMAGE,
-              ports: [{containerPort: this.port, name: 'restendpoint'}],
+              ports: [{ containerPort: this.port, name: 'restendpoint' }],
               readinessProbe: {
                 failureThreshold: 20,
                 httpGet: {

@@ -171,7 +171,7 @@ providers:
         },
         spec: {
           nodeSelector: nodeSelector,
-          affinity: nodeAffinity ? { nodeAffinity: { requiredDuringSchedulingIgnoredDuringExecution: { nodeSelectorTerms: [{ matchExpressions: Object.entries(nodeAffinity).map(([key, value]) => ({ key, operator: 'In', values: [value] })) }] } } } : undefined,
+          affinity: nodeAffinity ? { nodeAffinity: { requiredDuringSchedulingIgnoredDuringExecution: { nodeSelectorTerms: [{ matchExpressions: Object.entries(nodeAffinity).map(([key, value]) => ({ key, operator: 'NotIn', values: [value] })) }] } } } : undefined,
           volumes: [
             {
               configMap: {

@@ -246,7 +246,7 @@ export class SplitEDCInstance extends BaseInstance {
                     matchExpressions: Object.entries(nodeAffinity || {}).map(
                       ([key, value]) => ({
                         key,
-                        operator: 'In',
+                        operator: 'NotIn',
                         values: [value],
                       })
                     ),

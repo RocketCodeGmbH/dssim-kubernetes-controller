@@ -1,11 +1,10 @@
-
 export const parseJSON = (
-    rawSelector: string | undefined
+  rawSelector: string | undefined
 ): Record<string, string> | undefined => {
-    const trimmed = rawSelector?.trim();
-    if (!trimmed) {
-        return undefined;
-    }
+  const trimmed = rawSelector?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
 
-    return JSON.parse(trimmed) as Record<string, string>;
+  return JSON.parse(trimmed) as Record<string, string>;
 };

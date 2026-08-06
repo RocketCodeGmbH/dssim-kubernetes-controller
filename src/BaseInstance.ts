@@ -25,8 +25,8 @@ import {
   MemoryUnit,
   NetworkProfile,
 } from 'dssim-core';
-import { KubernetesExecutor } from './KubernetesExecutor.js';
-import { NetworkControl } from './system/NetworkControl.js';
+import {KubernetesExecutor} from './KubernetesExecutor.js';
+import {NetworkControl} from './system/NetworkControl.js';
 import {
   buildNetworkControlQuery,
   TrafficDirection,
@@ -41,12 +41,12 @@ export abstract class BaseInstance implements Instance {
     public readonly deploymentName: string,
     public readonly containerImages: ContainerImage[],
     public readonly endpoints: Endpoint[],
-    public readonly memoryLimit?: { value: number; unit: MemoryUnit },
-    public readonly cpuLimit?: { value: number; unit: CpuUnit }
-  ) { }
+    public readonly memoryLimit?: {value: number; unit: MemoryUnit},
+    public readonly cpuLimit?: {value: number; unit: CpuUnit}
+  ) {}
 
-  async deployPullSecrets(): Promise<{ [key: string]: string }> {
-    const secrets: { [key: string]: string } = {};
+  async deployPullSecrets(): Promise<{[key: string]: string}> {
+    const secrets: {[key: string]: string} = {};
     for (const containerImage of this.containerImages) {
       const secretName = containerImage.image
         .replace(/[^0-9A-Z]+/gi, '')
@@ -73,10 +73,14 @@ export abstract class BaseInstance implements Instance {
     return secrets;
   }
 
-  public async deploySecrets() { }
-  public async deployConfigMaps() { }
+  public async deploySecrets() {}
+  public async deployConfigMaps() {}
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async deployApp(pullSecrets: { [key: string]: string }, nodeSelector?: { [key: string]: string }, nodeAffinity?: { [key: string]: string }): Promise<void> { }
+  public async deployApp(
+    pullSecrets: {[key: string]: string},
+    nodeSelector?: {[key: string]: string},
+    nodeAffinity?: {[key: string]: string}
+  ): Promise<void> {}
 
   public async deployServices(): Promise<void> {
     await KubernetesExecutor.getInstance().deployService(
@@ -106,7 +110,7 @@ export abstract class BaseInstance implements Instance {
                 backend: {
                   service: {
                     name: this.deploymentName,
-                    port: { number: e.port },
+                    port: {number: e.port},
                   },
                 },
                 path: e.path,
@@ -192,5 +196,4 @@ export abstract class BaseInstance implements Instance {
       );
     return {podName, containerId: nodeInfo[0].containerId};
   }
-
 }

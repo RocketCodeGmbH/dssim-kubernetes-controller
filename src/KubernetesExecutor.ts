@@ -36,8 +36,8 @@ import {
   V1DaemonSetSpec,
   CustomObjectsApi,
 } from '@kubernetes/client-node';
-import { CpuUnit, MemoryUnit, waitFor, b64encode } from 'dssim-core';
-import { IncomingMessage } from 'http';
+import {CpuUnit, MemoryUnit, waitFor, b64encode} from 'dssim-core';
+import {IncomingMessage} from 'http';
 import stream from 'stream';
 import {parseContainerId} from './system/containerId.js';
 
@@ -48,7 +48,7 @@ export class KubernetesExecutor {
     public readonly namespace: string,
     public groupLabel: string,
     private kubeConfig: KubeConfig
-  ) { }
+  ) {}
 
   public static getInstance(): KubernetesExecutor {
     if (!KubernetesExecutor.instance) {
@@ -57,7 +57,6 @@ export class KubernetesExecutor {
       if (process.env.INCLUSTER === '1') {
         kubeConfig.loadFromCluster();
       } else {
-
         if (!process.env.K8S_KUBECONFIG_PATH)
           throw new Error('K8S_KUBECONFIG_PATH Environment Variable not set.');
         kubeConfig.loadFromFile(process.env.K8S_KUBECONFIG_PATH!);
@@ -84,13 +83,13 @@ export class KubernetesExecutor {
   public async deployApp(
     deploymentName: string,
     deploymentSpec: V1DeploymentSpec,
-    memoryLimit: { value: number; unit: MemoryUnit } | undefined,
-    cpuLimit: { value: number; unit: CpuUnit } | undefined
+    memoryLimit: {value: number; unit: MemoryUnit} | undefined,
+    cpuLimit: {value: number; unit: CpuUnit} | undefined
   ): Promise<{
     response: IncomingMessage;
     body: V1Deployment;
   }> {
-    const modifiedCeploymentSpec: V1DeploymentSpec = { ...deploymentSpec };
+    const modifiedCeploymentSpec: V1DeploymentSpec = {...deploymentSpec};
     modifiedCeploymentSpec.template.metadata!.labels!.group = this.groupLabel;
     modifiedCeploymentSpec.template.spec!.containers =
       modifiedCeploymentSpec.template.spec!.containers.map(c => {
@@ -155,10 +154,10 @@ export class KubernetesExecutor {
   }
 
   private buildRessourceManagement(
-    memoryLimit: { value: number; unit: MemoryUnit } | undefined,
-    cpuLimit: { value: number; unit: CpuUnit } | undefined
+    memoryLimit: {value: number; unit: MemoryUnit} | undefined,
+    cpuLimit: {value: number; unit: CpuUnit} | undefined
   ): V1ResourceRequirements | undefined {
-    const resourceDefinitions: V1ResourceRequirements = { limits: {} };
+    const resourceDefinitions: V1ResourceRequirements = {limits: {}};
 
     if (memoryLimit && memoryLimit.value) {
       resourceDefinitions.limits!['memory'] =
@@ -224,7 +223,7 @@ export class KubernetesExecutor {
   public async deployIngress(
     ingressName: string,
     rules: Array<V1IngressRule>,
-    annotations?: { [key: string]: string }
+    annotations?: {[key: string]: string}
   ): Promise<{
     response: IncomingMessage;
     body: V1Ingress;
@@ -242,7 +241,7 @@ export class KubernetesExecutor {
       },
       spec: {
         rules: rules,
-        tls: [{ hosts: rules.map(rule => rule.host ?? '') }],
+        tls: [{hosts: rules.map(rule => rule.host ?? '')}],
       },
     });
     console.log('Configured Ingress: ' + ingressName);
@@ -355,15 +354,15 @@ export class KubernetesExecutor {
       return (
         status.body.status?.numberReady &&
         status.body.status.numberReady ===
-        status.body.status.desiredNumberScheduled
+          status.body.status.desiredNumberScheduled
       );
     });
   }
 
   public async deployConfigMap(
     name: string,
-    data?: { [key: string]: string },
-    binaryData?: { [key: string]: string }
+    data?: {[key: string]: string},
+    binaryData?: {[key: string]: string}
   ): Promise<{
     response: IncomingMessage;
     body: V1ConfigMap;
@@ -391,7 +390,7 @@ export class KubernetesExecutor {
 
   public getNodeInfoOfDeployment = async (
     deploymentName: string
-  ): Promise<{ nodeName: string; containerId: string }[]> => {
+  ): Promise<{nodeName: string; containerId: string}[]> => {
     console.log(`trying to find network control for ${deploymentName}`);
     const coreApi = this.kubeConfig.makeApiClient(CoreV1Api);
     const info = await coreApi.listNamespacedPod(
@@ -544,7 +543,7 @@ export class KubernetesExecutor {
         'v1beta1',
         this.namespace,
         'flows'
-      )) as { body: { items: { metadata?: V1ObjectMeta | undefined }[] } },
+      )) as {body: {items: {metadata?: V1ObjectMeta | undefined}[]}},
       element => {
         return customApi.deleteNamespacedCustomObject(
           'logging.banzaicloud.io',
@@ -562,7 +561,7 @@ export class KubernetesExecutor {
         'v1beta1',
         this.namespace,
         'outputs'
-      )) as { body: { items: { metadata?: V1ObjectMeta | undefined }[] } },
+      )) as {body: {items: {metadata?: V1ObjectMeta | undefined}[]}},
       element => {
         return customApi.deleteNamespacedCustomObject(
           'logging.banzaicloud.io',
@@ -578,7 +577,7 @@ export class KubernetesExecutor {
   private deleteAll = (
     list: {
       body: {
-        items: { metadata?: V1ObjectMeta }[];
+        items: {metadata?: V1ObjectMeta}[];
       };
     },
     deleteFunction: (name: string) => Promise<{

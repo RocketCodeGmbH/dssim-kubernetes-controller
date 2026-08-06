@@ -186,23 +186,22 @@ export abstract class BaseInstance implements Instance {
     return Promise.resolve();
   }
 
-  private async getContainerInfo(): Promise<{
+  public async getContainerInfo(deploymentName1?: string): Promise<{
     podName: string;
     containerId: string;
   }> {
-    if (this.deploymentName) {
-      const nodeInfo =
-        await KubernetesExecutor.getInstance().getNodeInfoOfDeployment(
-          this.deploymentName
-        );
-      const podName =
-        await KubernetesExecutor.getInstance().getPodNameOfDeploymentOnNode(
-          nodeInfo[0].nodeName,
-          NetworkControl.DeploymentName
-        );
-      return { podName: podName, containerId: nodeInfo[0].containerId };
-    } else {
-      throw Promise.reject('Deployment name not set.');
-    }
+    const nodeInfo =
+      await KubernetesExecutor.getInstance().getNodeInfoOfDeployment(
+        deploymentName1 ? deploymentName1 as string : this.deploymentName
+      );
+
+    console.log(`Found node info for deployment ${deploymentName1 ? deploymentName1 : this.deploymentName}: ${JSON.stringify(nodeInfo)}`);
+    const podName =
+      await KubernetesExecutor.getInstance().getPodNameOfDeploymentOnNode(
+        nodeInfo[0].nodeName,
+        NetworkControl.DeploymentName
+      );
+    return { podName: podName, containerId: nodeInfo[0].containerId };
   }
+
 }

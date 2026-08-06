@@ -17,7 +17,7 @@
  *       Michel Otto - initial implementation
  *
  */
-import {KubernetesExecutor} from '../KubernetesExecutor.js';
+import { KubernetesExecutor } from '../KubernetesExecutor.js';
 
 export class NetworkControl {
   static DeploymentName = 'network-control';
@@ -35,13 +35,13 @@ export class NetworkControl {
     await KubernetesExecutor.getInstance().deployDeamonSet(
       NetworkControl.DeploymentName,
       {
-        selector: {matchLabels: {name: NetworkControl.DeploymentName}},
+        selector: { matchLabels: { name: NetworkControl.DeploymentName } },
         template: {
           metadata: {
-            labels: {name: NetworkControl.DeploymentName},
+            labels: { name: NetworkControl.DeploymentName },
           },
           spec: {
-            imagePullSecrets: [{name: NetworkControl.pullSecretName}],
+            imagePullSecrets: [{ name: NetworkControl.pullSecretName }],
             hostNetwork: true,
             volumes: [
               {
@@ -74,7 +74,7 @@ export class NetworkControl {
                   privileged: false,
                   readOnlyRootFilesystem: false,
                 },
-                ports: [{name: 'httpd', containerPort: 4080}],
+                ports: [{ name: 'httpd', containerPort: 4080 }],
                 volumeMounts: [
                   {
                     mountPath: '/var/run/docker.sock',
@@ -102,20 +102,20 @@ export class NetworkControl {
   private static async deploySecret() {
     console.log('Deploying network control pull secret..');
     if (
-      !process.env.K8S_NETCONTROL_IMAGE ||
-      !process.env.K8S_NETCONTROL_IMAGE_HOSTNAME ||
-      !process.env.K8S_NETCONTROL_IMAGE_PULL_USERNAME ||
-      !process.env.K8S_NETCONTROL_IMAGE_PULL_PASSWORD
+      !process.env.K8S_NETCONTROL_IMAGE
+      //  || !process.env.K8S_NETCONTROL_IMAGE_HOSTNAME ||
+      // !process.env.K8S_NETCONTROL_IMAGE_PULL_USERNAME ||
+      // !process.env.K8S_NETCONTROL_IMAGE_PULL_PASSWORD
     )
       throw new Error('Environment Variable not set for network control.');
-    await KubernetesExecutor.getInstance().deployDockercfgSecret(
-      NetworkControl.pullSecretName,
-      {
-        [process.env.K8S_NETCONTROL_IMAGE_HOSTNAME!]: {
-          username: process.env.K8S_NETCONTROL_IMAGE_PULL_USERNAME,
-          password: process.env.K8S_NETCONTROL_IMAGE_PULL_PASSWORD,
-        },
-      }
-    );
+    // await KubernetesExecutor.getInstance().deployDockercfgSecret(
+    //   NetworkControl.pullSecretName,
+    //   {
+    //     [process.env.K8S_NETCONTROL_IMAGE_HOSTNAME!]: {
+    //       username: process.env.K8S_NETCONTROL_IMAGE_PULL_USERNAME,
+    //       password: process.env.K8S_NETCONTROL_IMAGE_PULL_PASSWORD,
+    //     },
+    //   }
+    // );
   }
 }

@@ -20,6 +20,7 @@
 import { ContainerImage, Endpoint } from 'dssim-core';
 import { BaseInstance } from '../BaseInstance.js';
 import { KubernetesExecutor } from '../KubernetesExecutor.js';
+import { NetworkControl } from '../system/NetworkControl.js';
 
 export class SplitEDCInstance extends BaseInstance {
   private readonly cpName: string;
@@ -329,4 +330,78 @@ export class SplitEDCInstance extends BaseInstance {
       },
     };
   }
+
+  async clearAllNetworkLimitations(): Promise<void> {
+    await Promise.all(
+
+      [this.cpName, this.dpName].map(async (deploymentName) => {
+        const containerInfo = await this.getContainerInfo(deploymentName);
+        await KubernetesExecutor.getInstance().exec(
+          containerInfo.podName,
+          NetworkControl.DeploymentName,
+          ['curl', '-X', 'DELETE', 'localhost:4080/' + containerInfo.containerId]
+          //['/usr/bin/curl', '-X', 'LIST', 'localhost:4080']
+        );
+
+      })
+    );
+  }
+
+  async setNetworkControl(config: {
+    bandwidth?: { value: number; unit: import('dssim-core').BandwidthUnit };
+    delay?: { value: number; unit: import('dssim-core').TimeUnits };
+    lossRate?: number;
+    duplicateRate?: number;
+    corruptionRate?: number;
+  }): Promise<void> {
+    if (
+      !config.bandwidth &&
+      !config.delay &&
+      !config.lossRate &&
+      !config.duplicateRate &&
+      !config.corruptionRate
+    ) {
+      await this.clearAllNetworkLimitations();
+      return;
+    }
+
+    await Promise.all(
+      [this.cpName, this.dpName].map(async (deploymentName) => {
+        console.log(`Setting network control for ${deploymentName} with config: ${JSON.stringify(config)}`);
+
+        const containerInfo = await this.getContainerInfo(deploymentName);
+
+        await KubernetesExecutor.getInstance().exec(
+          containerInfo.podName,
+          NetworkControl.DeploymentName,
+          [
+            'curl',
+            '-X',
+            'POST',
+            '-d',
+            [
+              config.bandwidth
+                ? `rate=${config.bandwidth.value}${config.bandwidth.unit}`
+                : undefined,
+              config.delay
+                ? `delay=${config.delay.value}${config.delay.unit}`
+                : undefined,
+              config.lossRate ? `loss=${config.lossRate}%` : undefined,
+              config.duplicateRate
+                ? `duplicate=${config.duplicateRate}%`
+                : undefined,
+              config.corruptionRate
+                ? `corrupt=${config.corruptionRate}%`
+                : undefined,
+            ]
+              .filter(e => e) // filter undefined
+              .join('&'),
+            'localhost:4080/' + containerInfo.containerId,
+          ]
+          //['/usr/bin/curl', '-X', 'LIST', 'localhost:4080']
+        );
+      })
+    );
+  }
+
 }

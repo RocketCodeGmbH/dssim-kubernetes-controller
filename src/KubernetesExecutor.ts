@@ -39,6 +39,7 @@ import {
 import { CpuUnit, MemoryUnit, waitFor, b64encode } from 'dssim-core';
 import { IncomingMessage } from 'http';
 import stream from 'stream';
+import {parseContainerId} from './system/containerId.js';
 
 export class KubernetesExecutor {
   private static instance: KubernetesExecutor;
@@ -403,17 +404,13 @@ export class KubernetesExecutor {
     );
 
     return info.body.items.map(e => {
-      if (
-        e.spec?.nodeName &&
-        e.status?.containerStatuses &&
-        e.status?.containerStatuses![0].containerID
-      ) {
+      const containerStatus =
+        e.status?.containerStatuses?.find(s => s.ready && s.containerID) ??
+        e.status?.containerStatuses?.find(s => s.containerID);
+      if (e.spec?.nodeName && containerStatus?.containerID) {
         return {
-          nodeName: e.spec!.nodeName!,
-          containerId: e.status!.containerStatuses![0].containerID!.substring(
-            9,
-            21
-          ),
+          nodeName: e.spec.nodeName,
+          containerId: parseContainerId(containerStatus.containerID),
         };
       } else {
         console.error(e.spec);
@@ -453,7 +450,8 @@ export class KubernetesExecutor {
   public exec = async (
     podName: string,
     containerName: string,
-    command: string | string[]
+    command: string | string[],
+    options?: {throwOnFailure?: boolean}
   ): Promise<void> => {
     console.log(`executing '${command}' on ${podName}`);
     const exec = new Exec(this.kubeConfig);
@@ -469,11 +467,18 @@ export class KubernetesExecutor {
           process.stdin as stream.Readable,
           true,
           (status: V1Status) => {
-            // tslint:disable-next-line:no-console
             console.log('Exited with status:');
-            // tslint:disable-next-line:no-console
             console.log(JSON.stringify(status, null, 2));
-            resolve(status);
+            if (options?.throwOnFailure && status.status === 'Failure') {
+              reject(
+                new Error(
+                  `exec of '${command}' on ${podName} failed: ` +
+                    `${status.message ?? status.reason ?? 'unknown'}`
+                )
+              );
+            } else {
+              resolve(status);
+            }
           }
         );
       } catch (error) {

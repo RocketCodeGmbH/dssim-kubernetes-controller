@@ -75,12 +75,13 @@ export abstract class BaseInstance implements Instance {
 
   public async deploySecrets() {}
   public async deployConfigMaps() {}
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   public async deployApp(
     pullSecrets: {[key: string]: string},
     nodeSelector?: {[key: string]: string},
     nodeAffinity?: {[key: string]: string}
   ): Promise<void> {}
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   public async deployServices(): Promise<void> {
     await KubernetesExecutor.getInstance().deployService(

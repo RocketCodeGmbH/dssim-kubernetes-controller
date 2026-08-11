@@ -100,7 +100,7 @@ export class SplitEDCInstance extends BaseInstance {
     );
   }
 
-  public async deployApp(pullSecrets: { [key: string]: string }): Promise<void> {
+  public async deployApp(pullSecrets: { [key: string]: string }, nodeSelector?: { [key: string]: string }, nodeAffinity?: { [key: string]: string }): Promise<void> {
     await KubernetesExecutor.getInstance().deployApp(
       this.cpName,
       this.buildDeploymentSpec(
@@ -108,7 +108,9 @@ export class SplitEDCInstance extends BaseInstance {
         this.containerImages[0],
         this.cpConfigMapName,
         SplitEDCInstance.CpEndpoints,
-        pullSecrets
+        pullSecrets,
+        nodeSelector,
+        nodeAffinity
       ),
       this.memoryLimit,
       this.cpuLimit
@@ -120,7 +122,9 @@ export class SplitEDCInstance extends BaseInstance {
         this.containerImages[1],
         this.dpConfigMapName,
         SplitEDCInstance.DpEndpoints,
-        pullSecrets
+        pullSecrets,
+        nodeSelector,
+        nodeAffinity
       ),
       this.memoryLimit,
       this.cpuLimit
@@ -216,7 +220,9 @@ export class SplitEDCInstance extends BaseInstance {
     image: ContainerImage,
     configMapName: string,
     endpoints: Endpoint[],
-    pullSecrets: { [key: string]: string }
+    pullSecrets: { [key: string]: string },
+    nodeSelector?: { [key: string]: string },
+    nodeAffinity?: { [key: string]: string }
   ) {
     const healthPort = endpoints.find(e => e.name === 'health')?.port;
     if (healthPort === undefined) {
@@ -224,12 +230,31 @@ export class SplitEDCInstance extends BaseInstance {
         `No 'health' endpoint defined for ${name}; cannot configure EDC health probes`
       );
     }
+    console.log(`{nodeSelector: ${JSON.stringify(nodeSelector)}, nodeAffinity: ${JSON.stringify(nodeAffinity)}}`);
     return {
       selector: { matchLabels: { app: name } },
       replicas: 1,
       template: {
         metadata: { labels: { app: name } },
         spec: {
+          nodeSelector: nodeSelector ? nodeSelector : undefined,
+          affinity: {
+            nodeAffinity: nodeAffinity ? {
+              requiredDuringSchedulingIgnoredDuringExecution: {
+                nodeSelectorTerms: [
+                  {
+                    matchExpressions: Object.entries(nodeAffinity || {}).map(
+                      ([key, value]) => ({
+                        key,
+                        operator: 'NotIn',
+                        values: [value],
+                      })
+                    ),
+                  },
+                ],
+              },
+            } : undefined,
+          },
           imagePullSecrets: image.pullSecret
             ? [
               {

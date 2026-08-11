@@ -17,34 +17,37 @@
  *       Michel Otto - initial implementation
  *
  */
-import {KubernetesExecutor} from '../KubernetesExecutor.js';
-import {Grafana} from './Grafana/Grafana.js';
-import {LoggingPipe} from './LoggingPipeline/LoggingPipeline.js';
-import {Loki} from './LoggingPipeline/Loki.js';
+import { KubernetesExecutor } from '../KubernetesExecutor.js';
+import { Grafana } from './Grafana/Grafana.js';
+import { LoggingPipe } from './LoggingPipeline/LoggingPipeline.js';
+import { Loki } from './LoggingPipeline/Loki.js';
+import { parseJSON } from '../Utils/ParseJson.js';
 
 export class Monitoring {
   constructor(
-    public readonly grafanaDashboards: {[key: string]: string},
+    public readonly grafanaDashboards: { [key: string]: string },
     private readonly prometheusUrl: string
-  ) {}
+  ) { }
 
   lokiName = 'loki';
   lokiPort = 3100;
+
   public getLokiExternalUrl = (): string => `https://${this.lokiName}`;
   public getLokiInternalUrl = (): string =>
     `http://${this.lokiName}:${this.lokiPort}`;
   public getLokiClusterUrl = (): string =>
-    `http://${this.lokiName}.${
-      KubernetesExecutor.getInstance().namespace
+    `http://${this.lokiName}.${KubernetesExecutor.getInstance().namespace
     }.svc.cluster.local:${this.lokiPort}`;
   public getGrafanaUrl = (): string => `https://${Grafana.DEPLOYMENTNAME}`;
 
   deploy = async () => {
-    const loki = new Loki(this.lokiName, this.lokiPort);
+    const loki = new Loki(this.lokiName, this.lokiPort, parseJSON(process.env.NODE_SELECTOR), parseJSON(process.env.NODE_AFFINITY));
     const grafana = new Grafana(
       this.grafanaDashboards,
       this.getLokiInternalUrl(),
-      this.prometheusUrl
+      this.prometheusUrl,
+      parseJSON(process.env.NODE_SELECTOR),
+      parseJSON(process.env.NODE_AFFINITY)
     );
     const pipeline = new LoggingPipe();
     await Promise.all([

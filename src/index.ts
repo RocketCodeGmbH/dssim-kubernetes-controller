@@ -39,6 +39,7 @@ export { SplitEDCInstance } from './EDC/SplitEDCInstance.js';
 export { DapsInstance } from './IDS/DapsInstance.js';
 
 import { Monitoring } from './Monitoring/Monitoring.js';
+import { parseJSON } from './Utils/ParseJson.js';
 
 export class KubernetesController implements EnvironmentControllerInterface {
   // Private constructor to force the use of factory method and allow async construction
@@ -116,7 +117,7 @@ export class KubernetesController implements EnvironmentControllerInterface {
     await instance.deploySecrets();
     await instance.deployConfigMaps();
     await instance.deployServices();
-    await instance.deployApp(pullSecrets);
+    await instance.deployApp(pullSecrets, parseJSON(process.env.NODE_SELECTOR), parseJSON(process.env.NODE_AFFINITY));
     await instance.deployIngress();
   }
 

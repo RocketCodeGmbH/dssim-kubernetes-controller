@@ -17,9 +17,9 @@
  *       Michel Otto - initial implementation
  *
  */
-import {ContainerImage, Endpoint} from 'dssim-core';
-import {BaseInstance} from '../BaseInstance.js';
-import {KubernetesExecutor} from '../KubernetesExecutor.js';
+import { ContainerImage, Endpoint } from 'dssim-core';
+import { BaseInstance } from '../BaseInstance.js';
+import { KubernetesExecutor } from '../KubernetesExecutor.js';
 
 export class SplitEDCInstance extends BaseInstance {
   private readonly cpName: string;
@@ -33,19 +33,19 @@ export class SplitEDCInstance extends BaseInstance {
 
   /** Endpoints hosted on the control plane pod. */
   static readonly CpEndpoints: Endpoint[] = [
-    {name: 'health', path: '/api', port: 9080},
-    {name: 'management', path: '/api/management', port: 9081},
-    {name: 'control', path: '/api/control', port: 9082},
-    {name: 'protocol', path: '/api/v1/dsp', port: 9083},
-    {name: 'version', path: '/api/version', port: 9085},
-    {name: 'catalog', path: '/api/catalog', port: 9086},
+    { name: 'health', path: '/api', port: 9080 },
+    { name: 'management', path: '/api/management', port: 9081 },
+    { name: 'control', path: '/api/control', port: 9082 },
+    { name: 'protocol', path: '/api/v1/dsp', port: 9083 },
+    { name: 'version', path: '/api/version', port: 9085 },
+    { name: 'catalog', path: '/api/catalog', port: 9086 },
   ];
 
   /** Endpoints hosted on the data plane pod. */
   static readonly DpEndpoints: Endpoint[] = [
-    {name: 'health', path: '/api', port: 7080},
-    {name: 'control', path: '/api/control', port: 7082},
-    {name: 'public', path: '/api/v2/public', port: 7084},
+    { name: 'health', path: '/api', port: 7080 },
+    { name: 'control', path: '/api/control', port: 7082 },
+    { name: 'public', path: '/api/v2/public', port: 7084 },
   ];
 
   constructor(
@@ -84,7 +84,7 @@ export class SplitEDCInstance extends BaseInstance {
         ),
         [this.vaultFileName]: this.vaultFile,
       },
-      {[this.keystoreFileName]: this.keystore}
+      { [this.keystoreFileName]: this.keystore }
     );
     await KubernetesExecutor.getInstance().deployConfigMap(
       this.dpConfigMapName,
@@ -96,15 +96,11 @@ export class SplitEDCInstance extends BaseInstance {
         ),
         [this.vaultFileName]: this.vaultFile,
       },
-      {[this.keystoreFileName]: this.keystore}
+      { [this.keystoreFileName]: this.keystore }
     );
   }
 
-  public async deployApp(
-    pullSecrets: {[key: string]: string},
-    nodeSelector?: {[key: string]: string},
-    nodeAffinity?: {[key: string]: string}
-  ): Promise<void> {
+  public async deployApp(pullSecrets: { [key: string]: string }, nodeSelector?: { [key: string]: string }, nodeAffinity?: { [key: string]: string }): Promise<void> {
     await KubernetesExecutor.getInstance().deployApp(
       this.cpName,
       this.buildDeploymentSpec(
@@ -170,7 +166,7 @@ export class SplitEDCInstance extends BaseInstance {
             http: {
               paths: SplitEDCInstance.CpEndpoints.map(e => ({
                 backend: {
-                  service: {name: this.cpName, port: {number: e.port}},
+                  service: { name: this.cpName, port: { number: e.port } },
                 },
                 path: e.path,
                 pathType: 'Prefix',
@@ -193,7 +189,7 @@ export class SplitEDCInstance extends BaseInstance {
             http: {
               paths: SplitEDCInstance.DpEndpoints.map(e => ({
                 backend: {
-                  service: {name: this.dpName, port: {number: e.port}},
+                  service: { name: this.dpName, port: { number: e.port } },
                 },
                 path: e.path,
                 pathType: 'Prefix',
@@ -209,15 +205,11 @@ export class SplitEDCInstance extends BaseInstance {
 
     this.hostname = this.cpName;
     if (process.env.INCLUSTER === '1') {
-      console.log(
-        'Running in cluster, using http for endpoint and health check'
-      );
+      console.log('Running in cluster, using http for endpoint and health check');
       this.endPointUrl = `http://${this.cpName}:9081`;
       this.healthCheckUrl = `http://${this.cpName}:9080/api/check/health`;
     } else {
-      console.log(
-        'Running outside cluster, using https for endpoint and health check'
-      );
+      console.log('Running outside cluster, using https for endpoint and health check');
       this.endPointUrl = `https://${this.cpName}`;
       this.healthCheckUrl = `https://${this.cpName}/api/check/health`;
     }
@@ -228,9 +220,9 @@ export class SplitEDCInstance extends BaseInstance {
     image: ContainerImage,
     configMapName: string,
     endpoints: Endpoint[],
-    pullSecrets: {[key: string]: string},
-    nodeSelector?: {[key: string]: string},
-    nodeAffinity?: {[key: string]: string}
+    pullSecrets: { [key: string]: string },
+    nodeSelector?: { [key: string]: string },
+    nodeAffinity?: { [key: string]: string }
   ) {
     const healthPort = endpoints.find(e => e.name === 'health')?.port;
     if (healthPort === undefined) {
@@ -238,47 +230,41 @@ export class SplitEDCInstance extends BaseInstance {
         `No 'health' endpoint defined for ${name}; cannot configure EDC health probes`
       );
     }
-    console.log(
-      `{nodeSelector: ${JSON.stringify(
-        nodeSelector
-      )}, nodeAffinity: ${JSON.stringify(nodeAffinity)}}`
-    );
+    console.log(`{nodeSelector: ${JSON.stringify(nodeSelector)}, nodeAffinity: ${JSON.stringify(nodeAffinity)}}`);
     return {
-      selector: {matchLabels: {app: name}},
+      selector: { matchLabels: { app: name } },
       replicas: 1,
       template: {
-        metadata: {labels: {app: name}},
+        metadata: { labels: { app: name } },
         spec: {
           nodeSelector: nodeSelector ? nodeSelector : undefined,
           affinity: {
-            nodeAffinity: nodeAffinity
-              ? {
-                  requiredDuringSchedulingIgnoredDuringExecution: {
-                    nodeSelectorTerms: [
-                      {
-                        matchExpressions: Object.entries(
-                          nodeAffinity || {}
-                        ).map(([key, value]) => ({
-                          key,
-                          operator: 'NotIn',
-                          values: [value],
-                        })),
-                      },
-                    ],
+            nodeAffinity: nodeAffinity ? {
+              requiredDuringSchedulingIgnoredDuringExecution: {
+                nodeSelectorTerms: [
+                  {
+                    matchExpressions: Object.entries(nodeAffinity || {}).map(
+                      ([key, value]) => ({
+                        key,
+                        operator: 'NotIn',
+                        values: [value],
+                      })
+                    ),
                   },
-                }
-              : undefined,
+                ],
+              },
+            } : undefined,
           },
           imagePullSecrets: image.pullSecret
             ? [
-                {
-                  name: pullSecrets[Object.keys(image.pullSecret)[0]],
-                },
-              ]
+              {
+                name: pullSecrets[Object.keys(image.pullSecret)[0]],
+              },
+            ]
             : [],
           volumes: [
-            {emptyDir: {}, name: 'config-dir'},
-            {configMap: {name: configMapName}, name: configMapName},
+            { emptyDir: {}, name: 'config-dir' },
+            { configMap: { name: configMapName }, name: configMapName },
           ],
           initContainers: [
             {
@@ -290,8 +276,8 @@ export class SplitEDCInstance extends BaseInstance {
                 'cp /preconfig/* /config/; echo "{"more": "data"}" > /config/dummydata.json',
               ],
               volumeMounts: [
-                {name: 'config-dir', mountPath: '/config'},
-                {name: configMapName, mountPath: '/preconfig'},
+                { name: 'config-dir', mountPath: '/config' },
+                { name: configMapName, mountPath: '/preconfig' },
               ],
             },
           ],
@@ -306,14 +292,14 @@ export class SplitEDCInstance extends BaseInstance {
               })),
 
               readinessProbe: {
-                httpGet: {path: '/api/check/readiness', port: healthPort},
+                httpGet: { path: '/api/check/readiness', port: healthPort },
                 initialDelaySeconds: 10,
                 periodSeconds: 5,
                 failureThreshold: 12,
               },
 
               livenessProbe: {
-                httpGet: {path: '/api/check/liveness', port: healthPort},
+                httpGet: { path: '/api/check/liveness', port: healthPort },
                 initialDelaySeconds: 90,
                 periodSeconds: 10,
                 failureThreshold: 3,
@@ -336,7 +322,7 @@ export class SplitEDCInstance extends BaseInstance {
                   value: this.vaultPw,
                 },
               ],
-              volumeMounts: [{name: 'config-dir', mountPath: '/config'}],
+              volumeMounts: [{ name: 'config-dir', mountPath: '/config' }],
             },
           ],
         },

@@ -26,24 +26,24 @@ import {
   DssimLogger,
   Endpoint,
 } from 'dssim-core';
-import {BaseInstance} from './BaseInstance.js';
-import {CustomService} from './CustomService.js';
+import { BaseInstance } from './BaseInstance.js';
+import { CustomService } from './CustomService.js';
 
-import {KubernetesExecutor} from './KubernetesExecutor.js';
-import {NetworkControl} from './system/NetworkControl.js';
+import { KubernetesExecutor } from './KubernetesExecutor.js';
+import { NetworkControl } from './system/NetworkControl.js';
 
-export {DSCInstance} from './IDS/DSCInstance.js';
-export {BrokerInstance} from './IDS/BrokerInstance.js';
-export {EDCInstance} from './EDC/EDCInstance.js';
-export {SplitEDCInstance} from './EDC/SplitEDCInstance.js';
-export {DapsInstance} from './IDS/DapsInstance.js';
+export { DSCInstance } from './IDS/DSCInstance.js';
+export { BrokerInstance } from './IDS/BrokerInstance.js';
+export { EDCInstance } from './EDC/EDCInstance.js';
+export { SplitEDCInstance } from './EDC/SplitEDCInstance.js';
+export { DapsInstance } from './IDS/DapsInstance.js';
 
-import {Monitoring} from './Monitoring/Monitoring.js';
-import {parseJSON} from './Utils/ParseJson.js';
+import { Monitoring } from './Monitoring/Monitoring.js';
+import { parseJSON } from './Utils/ParseJson.js';
 
 export class KubernetesController implements EnvironmentControllerInterface {
   // Private constructor to force the use of factory method and allow async construction
-  private constructor(private logger: DssimLogger) {}
+  private constructor(private logger: DssimLogger) { }
 
   // set up and prepare environment
   // eg. deploy network control deamons
@@ -52,10 +52,10 @@ export class KubernetesController implements EnvironmentControllerInterface {
     networkControl: boolean,
     loggingPipeline:
       | {
-          dashboardDefinitions: {[key: string]: string};
-          prometheusUrl: string;
-          defaultLogLevel: LogLevel;
-        }
+        dashboardDefinitions: { [key: string]: string };
+        prometheusUrl: string;
+        defaultLogLevel: LogLevel;
+      }
       | undefined
   ): Promise<KubernetesController> {
     const logger = DssimLogger.getInstance();
@@ -117,11 +117,7 @@ export class KubernetesController implements EnvironmentControllerInterface {
     await instance.deploySecrets();
     await instance.deployConfigMaps();
     await instance.deployServices();
-    await instance.deployApp(
-      pullSecrets,
-      parseJSON(process.env.NODE_SELECTOR),
-      parseJSON(process.env.NODE_AFFINITY)
-    );
+    await instance.deployApp(pullSecrets, parseJSON(process.env.NODE_SELECTOR), parseJSON(process.env.NODE_AFFINITY));
     await instance.deployIngress();
   }
 

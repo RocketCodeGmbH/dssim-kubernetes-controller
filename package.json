@@ -1,6 +1,6 @@
 {
   "name": "dssim-kubernetes-controller",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "",
   "author": "Michel Otto",
   "license": "Apache-2.0",
@@ -36,6 +36,6 @@
   },
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
-    "dssim-core": "file:../dssim-core"
+    "dssim-core": "^1.0.0"
   }
 }

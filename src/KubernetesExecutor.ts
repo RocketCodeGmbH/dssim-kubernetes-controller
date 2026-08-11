@@ -39,7 +39,8 @@ import {
 import { CpuUnit, MemoryUnit, waitFor, b64encode } from 'dssim-core';
 import { IncomingMessage } from 'http';
 import stream from 'stream';
-import {parseContainerId} from './system/containerId.js';
+import { PassThrough } from 'stream';
+import { parseContainerId } from './system/containerId.js';
 
 export class KubernetesExecutor {
   private static instance: KubernetesExecutor;
@@ -450,10 +451,14 @@ export class KubernetesExecutor {
     podName: string,
     containerName: string,
     command: string | string[],
-    options?: {throwOnFailure?: boolean}
+    options?: { throwOnFailure?: boolean }
   ): Promise<void> => {
     console.log(`executing '${command}' on ${podName}`);
     const exec = new Exec(this.kubeConfig);
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    stdout.on('data', () => { });
+    stderr.on('data', () => { });
     const r = await new Promise((resolve, reject) => {
       try {
         exec.exec(
@@ -461,9 +466,9 @@ export class KubernetesExecutor {
           podName,
           containerName,
           command,
-          process.stdout as stream.Writable,
-          process.stderr as stream.Writable,
-          process.stdin as stream.Readable,
+          stdout, // process.stdout as stream.Writable,
+          stderr, // process.stderr as stream.Writable,
+          null, // process.stdin as stream.Readable,
           true,
           (status: V1Status) => {
             console.log('Exited with status:');
@@ -472,7 +477,7 @@ export class KubernetesExecutor {
               reject(
                 new Error(
                   `exec of '${command}' on ${podName} failed: ` +
-                    `${status.message ?? status.reason ?? 'unknown'}`
+                  `${status.message ?? status.reason ?? 'unknown'}`
                 )
               );
             } else {
@@ -483,6 +488,9 @@ export class KubernetesExecutor {
       } catch (error) {
         console.error(error);
         reject(error);
+      } finally {
+        stdout.destroy();
+        stderr.destroy();
       }
     });
     console.log(r);

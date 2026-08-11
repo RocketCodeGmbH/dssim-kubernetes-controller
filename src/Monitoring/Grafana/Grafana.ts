@@ -21,7 +21,7 @@ import {
   V1DeploymentSpec,
   V1LocalObjectReference,
 } from '@kubernetes/client-node';
-import { KubernetesExecutor } from '../../KubernetesExecutor.js';
+import {KubernetesExecutor} from '../../KubernetesExecutor.js';
 
 export class Grafana {
   static DEPLOYMENTNAME = 'grafana';
@@ -29,12 +29,12 @@ export class Grafana {
   IMAGE = 'grafana/grafana:latest';
 
   constructor(
-    public readonly dashboards: { [key: string]: string },
+    public readonly dashboards: {[key: string]: string},
     private lokiUrl: string,
     private prometheusUrl: string,
-    private nodeSelector?: { [key: string]: string },
-    private nodeAffinity?: { [key: string]: string }
-  ) { }
+    private nodeSelector?: {[key: string]: string},
+    private nodeAffinity?: {[key: string]: string}
+  ) {}
 
   dashboardsConfigMapName = 'grafana-dashboards';
   dashboardProvConfigMapName = 'grafana-dashboard-provisioning';
@@ -114,7 +114,12 @@ providers:
 
     await KubernetesExecutor.getInstance().deployApp(
       Grafana.DEPLOYMENTNAME,
-      this.deploymentSpec(Grafana.DEPLOYMENTNAME, [], this.nodeSelector, this.nodeAffinity),
+      this.deploymentSpec(
+        Grafana.DEPLOYMENTNAME,
+        [],
+        this.nodeSelector,
+        this.nodeAffinity
+      ),
       undefined,
       undefined
     );
@@ -122,7 +127,7 @@ providers:
     await KubernetesExecutor.getInstance().deployService(
       Grafana.DEPLOYMENTNAME,
       Grafana.DEPLOYMENTNAME,
-      [{ port: Grafana.PORT, targetPort: Grafana.PORT, name: 'grafanaport' }]
+      [{port: Grafana.PORT, targetPort: Grafana.PORT, name: 'grafanaport'}]
     );
 
     await KubernetesExecutor.getInstance().deployIngress(
@@ -137,7 +142,7 @@ providers:
                 backend: {
                   service: {
                     name: Grafana.DEPLOYMENTNAME,
-                    port: { number: Grafana.PORT },
+                    port: {number: Grafana.PORT},
                   },
                 },
                 path: '/',
@@ -153,8 +158,8 @@ providers:
   deploymentSpec = (
     deploymentName: string,
     pullSecrets: V1LocalObjectReference[],
-    nodeSelector?: { [key: string]: string },
-    nodeAffinity?: { [key: string]: string }
+    nodeSelector?: {[key: string]: string},
+    nodeAffinity?: {[key: string]: string}
   ): V1DeploymentSpec => {
     return {
       selector: {
@@ -171,7 +176,25 @@ providers:
         },
         spec: {
           nodeSelector: nodeSelector,
-          affinity: nodeAffinity ? { nodeAffinity: { requiredDuringSchedulingIgnoredDuringExecution: { nodeSelectorTerms: [{ matchExpressions: Object.entries(nodeAffinity).map(([key, value]) => ({ key, operator: 'NotIn', values: [value] })) }] } } } : undefined,
+          affinity: nodeAffinity
+            ? {
+                nodeAffinity: {
+                  requiredDuringSchedulingIgnoredDuringExecution: {
+                    nodeSelectorTerms: [
+                      {
+                        matchExpressions: Object.entries(nodeAffinity).map(
+                          ([key, value]) => ({
+                            key,
+                            operator: 'NotIn',
+                            values: [value],
+                          })
+                        ),
+                      },
+                    ],
+                  },
+                },
+              }
+            : undefined,
           volumes: [
             {
               configMap: {
@@ -197,7 +220,7 @@ providers:
             {
               name: deploymentName,
               image: this.IMAGE,
-              ports: [{ containerPort: Grafana.PORT, name: 'restendpoint' }],
+              ports: [{containerPort: Grafana.PORT, name: 'restendpoint'}],
               volumeMounts: [
                 {
                   name: this.dataSourceProvConfigMapName,

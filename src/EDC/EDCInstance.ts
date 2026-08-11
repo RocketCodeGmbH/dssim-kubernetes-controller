@@ -26,26 +26,25 @@ export class EDCInstance extends BaseInstance implements Instance {
   private keystoreFileName = 'keystore';
 
   static HealthEndpoint = {name: 'health', path: '/api/check', port: 8080};
-  static ControllerEndpoint = {name: 'controller', path: '/api', port: 8181};
-  static IDSEndpoint = {name: 'ids', path: '/api/v1/ids', port: 8282};
-  static DatamanagementEndpoint = {
-    name: 'datamanagement',
-    path: '/api/v1/data',
+  static ManagementEndpoint = {
+    name: 'management',
+    path: '/api/management',
+    port: 8181,
+  };
+  static ProtocolEndpoint = {name: 'protocol', path: '/api/dsp', port: 8282};
+  static SignalingEndpoint = {
+    name: 'signaling',
+    path: '/api/signaling',
     port: 8383,
   };
+  static ControlEndpoint = {name: 'control', path: '/api/control', port: 9191};
   static PublicEndpoint = {name: 'public', path: '/public', port: 8686};
-  static DataplaneEndpoint = {
-    name: 'dataplane',
-    path: '/dataplane',
-    port: 8484,
-  };
-  static ControlEndpoint = {name: 'control', path: '/control', port: 8585};
+
   static endpoints: Endpoint[] = [
     EDCInstance.HealthEndpoint,
-    EDCInstance.ControllerEndpoint,
-    EDCInstance.IDSEndpoint,
-    EDCInstance.DatamanagementEndpoint,
-    EDCInstance.DataplaneEndpoint,
+    EDCInstance.ManagementEndpoint,
+    EDCInstance.ProtocolEndpoint,
+    EDCInstance.SignalingEndpoint,
     EDCInstance.ControlEndpoint,
     EDCInstance.PublicEndpoint,
   ];
@@ -182,6 +181,10 @@ export class EDCInstance extends BaseInstance implements Instance {
                   {
                     name: 'EDC_KEYSTORE_PASSWORD',
                     value: this.vaultPw,
+                  },
+                  {
+                    name: 'EDC_DSP_CALLBACK_ADDRESS',
+                    value: 'http://' + this.deploymentName + ':8282/api/dsp',
                   },
                 ],
                 volumeMounts: [

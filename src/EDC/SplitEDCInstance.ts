@@ -329,4 +329,8 @@ export class SplitEDCInstance extends BaseInstance {
       },
     };
   }
+
+  protected networkControlTargets(): string[] {
+    return [this.cpName, this.dpName];
+  }
 }

@@ -455,15 +455,19 @@ export class KubernetesExecutor {
   ): Promise<void> => {
     console.log(`executing '${command}' on ${podName}`);
     const exec = new Exec(this.kubeConfig);
+
     const stdout = new PassThrough();
     const stderr = new PassThrough();
     let stdderBuffer = '';
+    let stdoutBuffer = '';
+    stdout.on('data', chunk => {
+      stdoutBuffer += chunk.toString();
+    });
     stderr.on('data', chunk => {
       stdderBuffer += chunk.toString();
     });
-    stdout.on('data', () => {});
-    const r = await new Promise((resolve, reject) => {
-      try {
+    try {
+      const r = await new Promise((resolve, reject) => {
         exec
           .exec(
             this.namespace,
@@ -481,7 +485,9 @@ export class KubernetesExecutor {
                 reject(
                   new Error(
                     `exec of '${command}' on ${podName} failed: ` +
-                      `${status.message ?? status.reason ?? 'unknown'}`
+                      `${status.message ?? status.reason ?? 'unknown'}` +
+                      (stdderBuffer ? `\n${stdderBuffer}` : '') +
+                      (stdoutBuffer ? `\n${stdoutBuffer}` : '')
                   )
                 );
               } else {
@@ -490,15 +496,17 @@ export class KubernetesExecutor {
             }
           )
           .catch(reject);
-      } catch (error) {
-        console.error(error);
-        reject(error);
-      }
-    }).finally(() => {
-      stdout.destroy();
+      });
+      console.log('stdout: ' + (stdoutBuffer || 'no output'));
+      console.log(r);
+    } catch (error) {
+      console.log('stdout: ' + (stdoutBuffer || 'no output'));
+      console.log('stderr: ' + (stdderBuffer || 'no output'));
+      throw error;
+    } finally {
       stderr.destroy();
-    });
-    console.log(r);
+      stdout.destroy();
+    }
     return Promise.resolve();
   };
 

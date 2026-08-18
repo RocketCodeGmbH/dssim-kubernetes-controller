@@ -39,6 +39,7 @@ import {
 import {CpuUnit, MemoryUnit, waitFor, b64encode} from 'dssim-core';
 import {IncomingMessage} from 'http';
 import stream from 'stream';
+import {PassThrough} from 'stream';
 import {parseContainerId} from './system/containerId.js';
 
 export class KubernetesExecutor {
@@ -454,38 +455,58 @@ export class KubernetesExecutor {
   ): Promise<void> => {
     console.log(`executing '${command}' on ${podName}`);
     const exec = new Exec(this.kubeConfig);
-    const r = await new Promise((resolve, reject) => {
-      try {
-        exec.exec(
-          this.namespace,
-          podName,
-          containerName,
-          command,
-          process.stdout as stream.Writable,
-          process.stderr as stream.Writable,
-          process.stdin as stream.Readable,
-          true,
-          (status: V1Status) => {
-            console.log('Exited with status:');
-            console.log(JSON.stringify(status, null, 2));
-            if (options?.throwOnFailure && status.status === 'Failure') {
-              reject(
-                new Error(
-                  `exec of '${command}' on ${podName} failed: ` +
-                    `${status.message ?? status.reason ?? 'unknown'}`
-                )
-              );
-            } else {
-              resolve(status);
-            }
-          }
-        );
-      } catch (error) {
-        console.error(error);
-        reject(error);
-      }
+
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    let stdderBuffer = '';
+    let stdoutBuffer = '';
+    stdout.on('data', chunk => {
+      stdoutBuffer += chunk.toString();
     });
-    console.log(r);
+    stderr.on('data', chunk => {
+      stdderBuffer += chunk.toString();
+    });
+    try {
+      const r = await new Promise((resolve, reject) => {
+        exec
+          .exec(
+            this.namespace,
+            podName,
+            containerName,
+            command,
+            stdout,
+            stderr,
+            null,
+            true,
+            (status: V1Status) => {
+              console.log('Exited with status:');
+              console.log(JSON.stringify(status, null, 2));
+              if (options?.throwOnFailure && status.status === 'Failure') {
+                reject(
+                  new Error(
+                    `exec of '${command}' on ${podName} failed: ` +
+                      `${status.message ?? status.reason ?? 'unknown'}` +
+                      (stdderBuffer ? `\n${stdderBuffer}` : '') +
+                      (stdoutBuffer ? `\n${stdoutBuffer}` : '')
+                  )
+                );
+              } else {
+                resolve(status);
+              }
+            }
+          )
+          .catch(reject);
+      });
+      console.log('stdout: ' + (stdoutBuffer || 'no output'));
+      console.log(r);
+    } catch (error) {
+      console.log('stdout: ' + (stdoutBuffer || 'no output'));
+      console.log('stderr: ' + (stdderBuffer || 'no output'));
+      throw error;
+    } finally {
+      stderr.destroy();
+      stdout.destroy();
+    }
     return Promise.resolve();
   };
 

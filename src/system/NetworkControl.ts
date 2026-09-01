@@ -18,9 +18,13 @@
  *
  */
 import {KubernetesExecutor} from '../KubernetesExecutor.js';
+import {
+  buildNetworkControlPodSpec,
+  NETWORK_CONTROL_NAME,
+} from './networkControlPodSpec.js';
 
 export class NetworkControl {
-  static DeploymentName = 'network-control';
+  static DeploymentName = NETWORK_CONTROL_NAME;
   static pullSecretName = 'network-control-pull-secret';
 
   static async deploy(): Promise<void> {
@@ -40,41 +44,13 @@ export class NetworkControl {
           metadata: {
             labels: {name: NetworkControl.DeploymentName},
           },
-          spec: {
-            ...(pullSecretDeployed
-              ? {imagePullSecrets: [{name: NetworkControl.pullSecretName}]}
-              : {}),
-            // hostNetwork: shape host-side veths and reach httpd on localhost.
-            // hostPID: resolve container PIDs via /proc and nsenter into pod
-            // network namespaces — replaces the pre-1.24 docker.sock mount.
-            hostNetwork: true,
-            hostPID: true,
-            containers: [
-              {
-                image: process.env.K8S_NETCONTROL_IMAGE,
-                imagePullPolicy: 'Always',
-                name: NetworkControl.DeploymentName,
-                securityContext: {
-                  allowPrivilegeEscalation: true,
-                  capabilities: {
-                    // NET_ADMIN: tc; SYS_ADMIN: setns; SYS_PTRACE: /proc/<pid>/ns
-                    add: ['NET_ADMIN', 'SYS_ADMIN', 'SYS_PTRACE'],
-                  },
-                  privileged: false,
-                  readOnlyRootFilesystem: false,
-                },
-                ports: [{name: 'httpd', containerPort: 4080}],
-                env: process.env.K8S_NETCONTROL_IFPREFIX
-                  ? [
-                      {
-                        name: 'IFPREFIX',
-                        value: process.env.K8S_NETCONTROL_IFPREFIX,
-                      },
-                    ]
-                  : [],
-              },
-            ],
-          },
+          spec: buildNetworkControlPodSpec({
+            image: process.env.K8S_NETCONTROL_IMAGE,
+            pullSecretName: pullSecretDeployed
+              ? NetworkControl.pullSecretName
+              : undefined,
+            ifPrefix: process.env.K8S_NETCONTROL_IFPREFIX,
+          }),
         },
       }
     );
